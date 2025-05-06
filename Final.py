@@ -1,45 +1,58 @@
 import random
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-def hangman():
-    word_list = ['python', 'javascript', 'hangman', 'developer', 'programming', 'code']
-    word = random.choice(word_list).lower()
-    guessed_word = ['_'] * len(word)
-    guessed_letters = []
-    attempts = 6
+def plot_chances(remaining, total):
+    plt.figure(figsize=(6, 4))
+    plt.bar(['Chances Left'], [remaining], color='red')
+    plt.ylim(0, total)
+    plt.xlabel("Attempts")
+    plt.ylabel("Remaining Chances")
+    plt.title("Hangman Game Progress")
+    plt.show()
 
-    print("Welcome to Hangman!")
-    print("You have 6 attempts to guess the word.")
-    print(" ".join(guessed_word))
+def load_words():
+    try:
+        df = pd.read_csv("words.txt", header=None, names=['words'])
+        words = df['words'].dropna().tolist()
+        return words
+    except FileNotFoundError:
+        print("Error: words.txt file not found. Using default word list.")
+        return ['python', 'pandas', 'matplotlib', 'numpy', 'seaborn', 'scipy', 'sklearn']
 
-    while attempts > 0:
-        guess = input("Guess a letter: ").lower()
-
-        if len(guess) != 1 or not guess.isalpha():
-            print("Please enter a single valid letter.")
-            continue
-
+def play_hangman():
+    words = load_words()
+    word_to_guess = np.random.choice(words).upper()
+    guessed_letters = set()
+    wrong_guesses = 0
+    max_attempts = 7
+    display_word = ['_'] * len(word_to_guess)
+    
+    print("Welcome to Hangman! Guess the word.")
+    while wrong_guesses < max_attempts and '_' in display_word:
+        print("\nCurrent word: ", ' '.join(display_word))
+        plot_chances(max_attempts - wrong_guesses, max_attempts)
+        guess = input("Guess a letter: ").upper()
+        
         if guess in guessed_letters:
-            print("You already guessed that letter. Try again.")
+            print("You already guessed that letter.")
             continue
-
-        guessed_letters.append(guess)
-
-        if guess in word:
-            print(f"Good job! {guess} is in the word.")
-            for index, letter in enumerate(word):
+        guessed_letters.add(guess)
+        
+        if guess in word_to_guess:
+            for idx, letter in enumerate(word_to_guess):
                 if letter == guess:
-                    guessed_word[index] = guess
+                    display_word[idx] = guess
         else:
-            attempts -= 1
-            print(f"Wrong guess! You have {attempts} attempts left.")
-
-        print(" ".join(guessed_word))
-
-        if '_' not in guessed_word:
-            print("Congratulations! You guessed the word!")
-            break
+            wrong_guesses += 1
+            print(f"Incorrect! {max_attempts - wrong_guesses} attempts left.")
+    
+    plot_chances(max_attempts - wrong_guesses, max_attempts)
+    if '_' not in display_word:
+        print("Congratulations! You guessed the word:", word_to_guess)
     else:
-        print(f"Game over! The word was '{word}'.")
+        print("You lost! The word was:", word_to_guess)
 
 if __name__ == "__main__":
-    hangman()
+    play_hangman()
